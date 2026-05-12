@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useFamily } from '../lib/FamilyContext';
-import { Send, Bot, User, Sparkles, Loader2, FileText, Users } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useFamily, API_BASE } from '../lib/FamilyContext';
+import { Send, Bot, User, Sparkles, Loader2, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -20,7 +20,7 @@ const SUGGESTED = [
 ];
 
 export function AIAssistant() {
-  const { activeMember, members, reports, auth } = useFamily();
+  const { activeMember, members, reports } = useFamily();
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);

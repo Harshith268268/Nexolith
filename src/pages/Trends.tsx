@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useFamily } from '../lib/FamilyContext';
 import {
   LineChart,
@@ -100,7 +100,7 @@ export function Trends() {
     ? (chartData[chartData.length - 1]?.status as any) || getStatusForValue(latestValue, effectiveParam)
     : 'Normal';
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label: _label }: any) => {
     if (active && payload && payload.length) {
       const d = payload[0].payload;
       return (

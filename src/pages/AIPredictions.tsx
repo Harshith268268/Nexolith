@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useFamily } from '../lib/FamilyContext';
 import {
   BrainCircuit,
@@ -21,18 +21,7 @@ export function AIPredictions() {
   const displayPredictions = activeMember ?
   predictions.filter((p) => p.memberId === activeMember.id) :
   predictions;
-  const getRiskColor = (level: string) => {
-    switch (level) {
-      case 'High':
-        return 'bg-critical-500';
-      case 'Moderate':
-        return 'bg-warning-500';
-      case 'Low':
-        return 'bg-success-500';
-      default:
-        return 'bg-slate-500';
-    }
-  };
+  // getRiskColor is replaced by getRiskBg below
   const getRiskBg = (level: string) => {
     switch (level) {
       case 'High':

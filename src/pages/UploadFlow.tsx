@@ -77,10 +77,16 @@ export function UploadFlow() {
 
       setProgress(100);
       setProcessingStatus('Complete!');
+      // Normalize abnormality: AI may return 'Warning', app uses 'Borderline'
+      const normalizeAbnormality = (a: string): string => {
+        if (!a) return 'Normal';
+        if (a === 'Warning' || a === 'warning') return 'Borderline';
+        return a;
+      };
       setExtractedData(data.labValues || []);
       setAiSummary(data.summary || '');
       setAiType(data.type || 'Blood');
-      setAiAbnormality(data.abnormality || 'Normal');
+      setAiAbnormality(normalizeAbnormality(data.abnormality || 'Normal'));
 
       setTimeout(() => setStep('review'), 500);
     } catch (err) {
@@ -102,15 +108,24 @@ export function UploadFlow() {
         abnormality: aiAbnormality as any,
         summary: aiSummary,
         doctorNotes: '',
-        labValues: extractedData.map(r => ({
-          id: r.id || String(Math.random()),
-          parameter: r.parameter,
-          value: Number(r.value) || 0,
-          unit: r.unit,
-          referenceRange: r.referenceRange,
-          status: r.status as any,
-          date: r.date || new Date().toISOString().split('T')[0]
-        }))
+        labValues: extractedData.map(r => {
+          // Normalize status: AI may return 'Warning' but app uses 'Borderline'
+          const normalizeStatus = (s: string): 'Normal' | 'Borderline' | 'Critical' => {
+            const s2 = (s || 'Normal').trim();
+            if (s2 === 'Warning' || s2 === 'warning' || s2 === 'Borderline') return 'Borderline';
+            if (s2 === 'Critical' || s2 === 'critical') return 'Critical';
+            return 'Normal';
+          };
+          return {
+            id: r.id || String(Math.random()),
+            parameter: r.parameter,
+            value: Number(r.value) || 0,
+            unit: r.unit,
+            referenceRange: r.referenceRange,
+            status: normalizeStatus(r.status),
+            date: r.date || new Date().toISOString().split('T')[0]
+          };
+        })
       });
       toast.success('Report saved successfully!');
       navigate('/reports');

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Users, Bell, Shield, Wifi, Info, Save, Trash2, ArrowRight, Loader2 } from 'lucide-react';
+import { User, Users, Bell, Shield, Wifi, Info, Save, Trash2, ArrowRight } from 'lucide-react';
 import { useFamily } from '../lib/FamilyContext';
 import { Avatar } from '../components/Avatar';
 import { toast } from 'sonner';
@@ -43,7 +43,7 @@ export function Settings() {
         if (parsed.twoFactor !== undefined) setTwoFactor(parsed.twoFactor);
         if (parsed.offlineMode !== undefined) setOfflineMode(parsed.offlineMode);
         if (parsed.downloadPdfs !== undefined) setDownloadPdfs(parsed.downloadPdfs);
-      } catch (e) {}
+      } catch { /* ignore invalid settings JSON */ }
     }
   }, []);
 
@@ -95,7 +95,7 @@ export function Settings() {
       // Also save email and phone to local storage preferences
       const saved = localStorage.getItem('healthai_settings');
       let currentSettings = {};
-      try { if (saved) currentSettings = JSON.parse(saved); } catch (e) {}
+      try { if (saved) currentSettings = JSON.parse(saved); } catch { /* ignore */ }
       
       localStorage.setItem('healthai_settings', JSON.stringify({
         ...currentSettings,

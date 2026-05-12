@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useFamily } from '../lib/FamilyContext';
 import {
-  Bell, Calendar, Check, Clock, Plus, AlertCircle,
-  Loader2, X, Stethoscope, AlarmClock, ChevronDown
+  Bell, Calendar, Check, Clock, AlertCircle,
+  Loader2, X, Stethoscope, AlarmClock
 } from 'lucide-react';
 import { Avatar } from '../components/Avatar';
 import { toast } from 'sonner';

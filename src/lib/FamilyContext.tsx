@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { FamilyMember, Report, Alert, Prediction } from './mockData';
 import localforage from 'localforage';
 
@@ -52,7 +52,7 @@ function getStoredAuth(): AuthState {
   try {
     const raw = localStorage.getItem('healthai_auth');
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch { /* invalid JSON in storage — return defaults */ }
   return { token: null, familyId: null, username: null };
 }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Menu, Search, Bell, ChevronDown, Plus, Wifi, LogOut } from 'lucide-react';
 import { useFamily } from '../lib/FamilyContext';
 import { Avatar } from './Avatar';

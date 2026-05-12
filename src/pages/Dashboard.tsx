@@ -1,4 +1,4 @@
-import React from 'react';
+import { AbnormalityLevel } from '../lib/mockData';
 import { useFamily } from '../lib/FamilyContext';
 import { StatCard } from '../components/StatCard';
 import { AbnormalityBadge } from '../components/AbnormalityBadge';
@@ -58,8 +58,8 @@ export function Dashboard() {
   chronologicalReports.forEach(r => {
     if (r.labValues && Array.isArray(r.labValues)) {
       r.labValues.forEach(l => {
-        if (l && l.marker) {
-          markerCounts[l.marker] = (markerCounts[l.marker] || 0) + 1;
+        if (l && l.parameter) {
+          markerCounts[l.parameter] = (markerCounts[l.parameter] || 0) + 1;
         }
       });
     }
@@ -76,11 +76,11 @@ export function Dashboard() {
     
     chronologicalReports.forEach(report => {
       if (report.labValues && Array.isArray(report.labValues)) {
-        const match = report.labValues.find(l => l && l.marker && l.marker.toLowerCase().includes(markerName.toLowerCase()));
-        if (match && !isNaN(parseFloat(match.value))) {
-          data.push({ value: parseFloat(match.value) });
-          latestUnit = match.unit;
-          latestStatus = match.status;
+        const match = report.labValues.find(l => l && l.parameter && l.parameter.toLowerCase().includes(markerName.toLowerCase()));
+        if (match && !isNaN(parseFloat(String(match.value)))) {
+          data.push({ value: parseFloat(String(match.value)) });
+          latestUnit = match.unit || '';
+          latestStatus = match.status || 'Normal';
         }
       }
     });
@@ -275,7 +275,7 @@ export function Dashboard() {
                     </span>
                   </div>
                 </div>
-                <AbnormalityBadge level={metric1.latestStatus} />
+                <AbnormalityBadge level={metric1.latestStatus as AbnormalityLevel} />
               </div>
               <div className="h-16 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -305,7 +305,7 @@ export function Dashboard() {
                     </span>
                   </div>
                 </div>
-                <AbnormalityBadge level={metric2.latestStatus} />
+                <AbnormalityBadge level={metric2.latestStatus as AbnormalityLevel} />
               </div>
               <div className="h-16 w-full">
                 <ResponsiveContainer width="100%" height="100%">

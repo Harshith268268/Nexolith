@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useFamily } from '../lib/FamilyContext';
 import { Avatar } from '../components/Avatar';
 import { AbnormalityBadge } from '../components/AbnormalityBadge';
 import {
   Plus,
   FileText,
-  Activity,
   Calendar,
   ChevronRight,
   X,
@@ -14,7 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { FamilyMember } from '../lib/mockData';
 export function FamilyMembers() {
-  const { members, setActiveMember, addMember } = useFamily();
+  const { members, setActiveMember, addMember, reports } = useFamily();
   const navigate = useNavigate();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,7 +68,7 @@ export function FamilyMembers() {
                     <FileText className="w-3.5 h-3.5 mr-1" /> Reports
                   </p>
                   <p className="text-sm font-semibold text-slate-900">
-                    {member.reportCount} stored
+                    {reports.filter(r => String(r.memberId) === String(member.id) || String(r.member_id) === String(member.id)).length} stored
                   </p>
                 </div>
                 <div>

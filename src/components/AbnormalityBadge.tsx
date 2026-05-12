@@ -1,4 +1,3 @@
-import React from 'react';
 import { AbnormalityLevel } from '../lib/mockData';
 interface AbnormalityBadgeProps {
   level: AbnormalityLevel;

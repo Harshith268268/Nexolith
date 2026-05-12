@@ -2,9 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { initializeDb } = require('./database');
 
 const app = express();
@@ -37,15 +38,20 @@ app.post(['/api/auth/login', '/api/login'], async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database not ready' });
   
   if (username === 'Family1') {
-    const familyId = 12345;
+    // Force Family1 to use ID 3 so it successfully connects to Chiranjeevi's old reports!
+    const familyId = 3;
     const token = jwt.sign({ username, familyId }, JWT_SECRET);
     
     try {
-      const count = await db.get('SELECT COUNT(*) as cnt FROM members WHERE familyId = ?', [familyId]);
+      const count = await db.get('SELECT COUNT(*) as cnt FROM members WHERE familyId = ? OR family_id = ?', [familyId, familyId]);
       if (count.cnt === 0) {
         const names = ['Chiranjeevi', 'Ramcharan', 'Uppasana', 'Cjimtu', 'Chimtk'];
         for (const name of names) {
-          await db.run('INSERT INTO members (name, familyId, relation) VALUES (?, ?, ?)', [name, familyId, name === 'Chiranjeevi' ? 'Primary' : 'Member']);
+          try {
+            await db.run('INSERT INTO members (name, familyId, family_id, relation) VALUES (?, ?, ?, ?)', [name, familyId, familyId, name === 'Chiranjeevi' ? 'Primary' : 'Member']);
+          } catch (err) {
+            await db.run('INSERT INTO members (name, familyId, relation) VALUES (?, ?, ?)', [name, familyId, name === 'Chiranjeevi' ? 'Primary' : 'Member']);
+          }
         }
       }
       return res.json({ token, familyId, username });
@@ -82,13 +88,17 @@ app.get('/api/health', (req, res) => res.json({ status: 'online', db: !!db, ai: 
 
 app.get('/api/data', auth, async (req, res) => {
   try {
-    const reports = await db.all('SELECT * FROM reports WHERE familyId = ? ORDER BY date DESC', [req.user.familyId]);
-    const members = await db.all('SELECT * FROM members WHERE familyId = ?', [req.user.familyId]);
-    const alerts = await db.all('SELECT * FROM alerts WHERE familyId = ?', [req.user.familyId]);
+    const reports = await db.all('SELECT * FROM reports WHERE familyId = ? OR family_id = ? ORDER BY date DESC', [req.user.familyId, req.user.familyId]);
+    const members = await db.all('SELECT * FROM members WHERE familyId = ? OR family_id = ?', [req.user.familyId, req.user.familyId]);
+    const alerts = await db.all('SELECT * FROM alerts WHERE familyId = ? OR family_id = ?', [req.user.familyId, req.user.familyId]);
     res.json({ 
-      reports: reports.map(r => ({ ...r, labValues: JSON.parse(r.labValues || '[]') })), 
+      reports: reports.map(r => ({ 
+        ...r, 
+        memberId: r.memberId || r.member_id, 
+        labValues: (() => { try { return JSON.parse(r.labValues || '[]'); } catch { return []; } })()
+      })), 
       members,
-      alerts
+      alerts: alerts.map(a => ({ ...a, memberId: a.memberId || a.member_id }))
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -96,7 +106,7 @@ app.get('/api/data', auth, async (req, res) => {
 // ── Members Routes ──────────────────────────────────────────────────────────
 app.get('/api/members', auth, async (req, res) => {
   try {
-    const members = await db.all('SELECT * FROM members WHERE familyId = ?', [req.user.familyId]);
+    const members = await db.all('SELECT * FROM members WHERE familyId = ? OR family_id = ?', [req.user.familyId, req.user.familyId]);
     res.json(members);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -105,8 +115,8 @@ app.post('/api/members', auth, async (req, res) => {
   const { name, age, relation, avatarUrl } = req.body;
   try {
     const result = await db.run(
-      'INSERT INTO members (familyId, name, age, relation, avatarUrl) VALUES (?, ?, ?, ?, ?)',
-      [req.user.familyId, name, age, relation, avatarUrl]
+      'INSERT INTO members (familyId, family_id, name, age, relation, avatarUrl) VALUES (?, ?, ?, ?, ?, ?)',
+      [req.user.familyId, req.user.familyId, name, age, relation, avatarUrl]
     );
     const newMember = await db.get('SELECT * FROM members WHERE id = ?', [result.lastID]);
     res.json(newMember);
@@ -117,8 +127,8 @@ app.put('/api/members/:id', auth, async (req, res) => {
   const { name, age, relation, avatarUrl } = req.body;
   try {
     await db.run(
-      'UPDATE members SET name = ?, age = ?, relation = ?, avatarUrl = ? WHERE id = ? AND familyId = ?',
-      [name, age, relation, avatarUrl, req.params.id, req.user.familyId]
+      'UPDATE members SET name = ?, age = ?, relation = ?, avatarUrl = ? WHERE id = ? AND (familyId = ? OR family_id = ?)',
+      [name, age, relation, avatarUrl, req.params.id, req.user.familyId, req.user.familyId]
     );
     res.json({ message: 'Member updated' });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -126,7 +136,7 @@ app.put('/api/members/:id', auth, async (req, res) => {
 
 app.delete('/api/members/:id', auth, async (req, res) => {
   try {
-    await db.run('DELETE FROM members WHERE id = ? AND familyId = ?', [req.params.id, req.user.familyId]);
+    await db.run('DELETE FROM members WHERE id = ? AND (familyId = ? OR family_id = ?)', [req.params.id, req.user.familyId, req.user.familyId]);
     res.json({ message: 'Member deleted' });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -135,26 +145,42 @@ app.delete('/api/members/:id', auth, async (req, res) => {
 app.post('/api/reports', auth, async (req, res) => {
   const { memberId, title, date, summary, type, abnormality, labValues, doctorNotes } = req.body;
   try {
-    const result = await db.run(
-      'INSERT INTO reports (familyId, memberId, title, date, summary, type, abnormality, labValues, doctorNotes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [req.user.familyId, memberId, title, date, summary, type, abnormality, JSON.stringify(labValues), doctorNotes]
+    const reportId = crypto.randomUUID();
+    await db.run(
+      'INSERT INTO reports (id, familyId, family_id, memberId, member_id, title, date, summary, type, abnormality, labValues, doctorNotes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [reportId, req.user.familyId, req.user.familyId, memberId, memberId, title, date, summary, type, abnormality, JSON.stringify(labValues || []), doctorNotes || '']
     );
-    const newReport = await db.get('SELECT * FROM reports WHERE id = ?', [result.lastID]);
-    newReport.labValues = JSON.parse(newReport.labValues);
-    
+
+    // Update member stats
     await db.run(
       'UPDATE members SET lastReportDate = ?, reportCount = reportCount + 1, overallRisk = ? WHERE id = ?',
       [date, abnormality, memberId]
     );
 
-    res.json(newReport);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+    res.json({
+      id: reportId,
+      familyId: req.user.familyId,
+      family_id: req.user.familyId,
+      memberId,
+      member_id: memberId,
+      title,
+      date,
+      summary,
+      type,
+      abnormality,
+      labValues: labValues || [],
+      doctorNotes: doctorNotes || ''
+    });
+  } catch (e) {
+    console.error('POST /api/reports error:', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── Alerts Routes ───────────────────────────────────────────────────────────
 app.get('/api/alerts', auth, async (req, res) => {
   try {
-    const alerts = await db.all('SELECT * FROM alerts WHERE familyId = ?', [req.user.familyId]);
+    const alerts = await db.all('SELECT * FROM alerts WHERE familyId = ? OR family_id = ?', [req.user.familyId, req.user.familyId]);
     res.json(alerts);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -162,45 +188,62 @@ app.get('/api/alerts', auth, async (req, res) => {
 app.post('/api/alerts', auth, async (req, res) => {
   const { memberId, title, description, date, severity, type } = req.body;
   try {
-    const result = await db.run(
-      'INSERT INTO alerts (familyId, memberId, title, description, date, severity, type) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [req.user.familyId, memberId, title, description, date, severity, type]
+    const alertId = crypto.randomUUID();
+    await db.run(
+      'INSERT INTO alerts (id, familyId, family_id, memberId, member_id, title, description, date, severity, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [alertId, req.user.familyId, req.user.familyId, memberId, memberId, title, description, date, severity, type]
     );
-    const newAlert = await db.get('SELECT * FROM alerts WHERE id = ?', [result.lastID]);
+    const newAlert = await db.get('SELECT * FROM alerts WHERE id = ?', [alertId]);
     res.json(newAlert);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { 
+    console.error('POST /api/alerts error:', e);
+    res.status(500).json({ error: e.message }); 
+  }
 });
 
 // ── AI Analysis ─────────────────────────────────────────────────────────────
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+const GEMINI_MODEL = 'gemini-2.5-flash';
 const upload = multer({ storage: multer.memoryStorage() });
 
 app.post('/api/analyze-report', upload.single('report'), async (req, res) => {
   if (!req.file || !genAI) return res.status(400).json({ error: 'AI Service or file missing' });
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const prompt = `
-      Analyze this medical report. Extract all lab values with parameter, value, unit, reference range, and status (Normal, Warning, Critical).
-      Also provide a brief summary, the type of report, and overall abnormality level.
-      Return ONLY JSON in this format:
+    const prompt = `Analyze this medical report image/PDF. Extract all lab values.
+      Use ONLY these status values: "Normal", "Borderline", or "Critical" (never "Warning").
+      Return ONLY valid JSON, no markdown, no explanation:
       {
-        "labValues": [{ "parameter": "...", "value": "...", "unit": "...", "referenceRange": "...", "status": "..." }],
-        "summary": "...",
-        "type": "...",
-        "abnormality": "Normal/Warning/Critical"
-      }
-    `;
+        "labValues": [{ "parameter": "name", "value": "123", "unit": "mg/dL", "referenceRange": "70-99", "status": "Normal" }],
+        "summary": "Brief summary of findings",
+        "type": "Blood",
+        "abnormality": "Normal"
+      }`;
 
-    const result = await model.generateContent([
-      prompt,
-      { inlineData: { mimeType: req.file.mimetype, data: req.file.buffer.toString('base64') } }
-    ]);
-    
-    let text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    const response = await genAI.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: [
+        {
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: req.file.mimetype, data: req.file.buffer.toString('base64') } }
+          ]
+        }
+      ]
+    });
+
+    let text = response.text;
+    if (!text) throw new Error('Empty response from AI');
+    // Strip any markdown code fences
+    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const startIndex = text.indexOf('{');
+    const endIndex = text.lastIndexOf('}');
+    if (startIndex !== -1 && endIndex !== -1) {
+      text = text.substring(startIndex, endIndex + 1);
+    }
     res.json(JSON.parse(text));
-  } catch (e) { 
-    console.error(e);
-    res.status(500).json({ error: "Analysis failed: " + e.message }); 
+  } catch (e) {
+    console.error('analyze-report error:', e.message);
+    res.status(500).json({ error: 'Analysis failed: ' + e.message });
   }
 });
 
@@ -208,14 +251,30 @@ app.post('/api/chat', async (req, res) => {
   if (!genAI) return res.status(500).json({ error: 'AI not ready' });
   const { message, context, memberName, chatHistory } = req.body;
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const chat = model.startChat({
-      history: chatHistory.map(h => ({ role: h.role === 'assistant' ? 'model' : 'user', parts: [{ text: h.content }] }))
+    const systemPrompt = `You are HealthAI, a friendly medical assistant. You help users understand their lab reports and health trends. Be concise and clear. Patient: ${memberName || 'the patient'}.`;
+
+    // Build conversation history for context (exclude the initial greeting from model)
+    const safeHistory = (chatHistory || [])
+      .filter(h => h && h.role && h.content && h.content.trim())
+      .map(h => ({
+        role: h.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: h.content }]
+      }))
+      .filter((_, i, arr) => !(i === 0 && arr[0]?.role === 'model'));
+
+    const chat = genAI.chats.create({
+      model: GEMINI_MODEL,
+      history: safeHistory,
+      config: { systemInstruction: systemPrompt }
     });
-    const prompt = `Context about ${memberName}: ${JSON.stringify(context)}. Question: ${message}`;
-    const result = await chat.sendMessage(prompt);
-    res.json({ response: result.response.text() });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+
+    const userMessage = `Patient medical context: ${JSON.stringify(context)}\n\nQuestion: ${message}`;
+    const response = await chat.sendMessage({ message: userMessage });
+    res.json({ response: response.text });
+  } catch (e) {
+    console.error('Chat error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── Start Server ────────────────────────────────────────────────────────────

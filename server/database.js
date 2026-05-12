@@ -3,8 +3,11 @@ const sqlite3 = require('sqlite3');
 const path = require('path');
 
 async function initializeDb() {
-  const dbPath = path.join(__dirname, 'database_v2.sqlite');
+  // Use DB_PATH from environment (for Railway Volumes) or default to local file
+  const dbPath = process.env.DB_PATH || path.join(__dirname, 'database.sqlite');
   
+  console.log(`📂 Using database at: ${dbPath}`);
+
   const db = await open({
     filename: dbPath,
     driver: sqlite3.Database

@@ -1,10 +1,9 @@
-import React from 'react';
-import { BoxIcon } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 interface StatCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  icon: BoxIcon;
+  icon: LucideIcon;
   trend?: {
     value: string;
     isPositive: boolean;
