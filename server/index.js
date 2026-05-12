@@ -314,7 +314,7 @@ Here are the reports to analyze:
 ${JSON.stringify(reportsData)}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: [{ role: 'user', parts: [{ text: prompt }] }]
     });
 
@@ -379,7 +379,7 @@ Return ONLY the raw JSON object, no markdown, no explanation.
 ${extractedText ? `\nHere is the OCR extracted text from the document to help ensure 100% accuracy:\n"""\n${extractedText}\n"""\n` : ''}`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       contents: [
         { role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType, data: base64Data } }] }
       ]
