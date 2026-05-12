@@ -11,7 +11,9 @@ const Tesseract = require('tesseract.js');
 const pdf = require('pdf-parse');
 
 const app = express();
-const port = process.env.PORT || 3001; // Railway assigns PORT dynamically
+const port = process.env.PORT || 3001;
+console.log('--- SERVER STARTING UP ---');
+console.log(`Target Port: ${port}`);
 const JWT_SECRET = process.env.JWT_SECRET || 'healthai_supersecret_jwt_key_2026';
 
 // Allow all origins — needed for mobile app and Vercel frontend
@@ -453,7 +455,7 @@ Instructions:
 
     contents.push({ role: 'user', parts: [{ text: message }] });
 
-    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents });
+    const response = await ai.models.generateContent({ model: 'gemini-1.5-flash', contents });
     res.json({ response: response.text });
   } catch (error) {
     console.error('Chat error:', error);
