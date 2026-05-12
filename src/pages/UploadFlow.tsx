@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useFamily } from '../lib/FamilyContext';
+import { useFamily, API_BASE } from '../lib/FamilyContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   UploadCloud,
@@ -63,7 +63,7 @@ export function UploadFlow() {
       setProgress(30);
       setProcessingStatus('Extracting text via OCR...');
 
-      const res = await fetch('/api/analyze-report', {
+          const res = await fetch(`${API_BASE}/api/analyze-report`, {
         method: 'POST',
         body: formData
       });
