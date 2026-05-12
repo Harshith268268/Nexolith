@@ -14,15 +14,14 @@ async function initializeDb() {
     
     // --- DATA MIGRATION LOGIC ---
     const fs = require('fs');
-    // If we are on Railway and the persistent database doesn't exist yet, 
-    // but we have a bundled database from our PC, copy it over!
-    if (!fs.existsSync(persistentPath) && fs.existsSync(localBundledPath)) {
-      console.log('--- MIGRATING LOCAL DATA TO CLOUD ---');
+    // FORCE MIGRATION: Copy bundled database from PC over the cloud one
+    if (fs.existsSync(localBundledPath)) {
+      console.log('--- FORCING DATA SYNC FROM PC TO CLOUD ---');
       try {
         fs.copyFileSync(localBundledPath, persistentPath);
-        console.log('--- MIGRATION SUCCESSFUL ---');
+        console.log('--- SYNC SUCCESSFUL ---');
       } catch (err) {
-        console.error('--- MIGRATION FAILED ---', err);
+        console.error('--- SYNC FAILED ---', err);
       }
     }
   } else {
