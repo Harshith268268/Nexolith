@@ -8,6 +8,41 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { initializeDb } = require('./database');
 
+let db;
+
+async function seedDatabase() {
+  const family = await db.get('SELECT * FROM families WHERE username = ?', ['Family1']);
+  if (!family) {
+    console.log('🌱 Seeding initial data...');
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash('1234', 10);
+    const { lastID } = await db.run(
+      'INSERT INTO families (username, password) VALUES (?, ?)',
+      ['Family1', hashedPassword]
+    );
+
+    // Add initial members
+    const members = [
+      { id: 'm1', name: 'Chiranjeevi', age: 68, relation: 'Father', avatarUrl: 'https://i.pravatar.cc/150?u=m1' },
+      { id: 'm2', name: 'Saraswati', age: 62, relation: 'Mother', avatarUrl: 'https://i.pravatar.cc/150?u=m2' },
+      { id: 'm3', name: 'Harshith', age: 24, relation: 'Self', avatarUrl: 'https://i.pravatar.cc/150?u=m3' }
+    ];
+
+    for (const m of members) {
+      await db.run(
+        'INSERT INTO members (id, family_id, familyId, name, age, relation, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [m.id, lastID, lastID, m.name, m.age, m.relation, m.avatarUrl]
+      );
+    }
+    console.log('✅ Seeding complete!');
+  }
+}
+
+initializeDb().then(database => {
+  db = database;
+  seedDatabase();
+});
+
 const app = express();
 const port = process.env.PORT || 3001;
 
