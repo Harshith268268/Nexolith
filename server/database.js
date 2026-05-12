@@ -3,11 +3,31 @@ const sqlite3 = require('sqlite3');
 const path = require('path');
 
 async function initializeDb() {
-  // Use /data/database.sqlite on Railway (persistent volume mounted at /data)
-  // Fall back to local __dirname for development
-  const dbPath = process.env.RAILWAY_ENVIRONMENT
-    ? '/data/database.sqlite'
-    : path.join(__dirname, 'database.sqlite');
+  const isRailway = process.env.RAILWAY_ENVIRONMENT;
+  const persistentPath = '/data/database.sqlite';
+  const localBundledPath = path.join(__dirname, 'database.sqlite');
+  
+  let dbPath;
+
+  if (isRailway) {
+    dbPath = persistentPath;
+    
+    // --- DATA MIGRATION LOGIC ---
+    const fs = require('fs');
+    // If we are on Railway and the persistent database doesn't exist yet, 
+    // but we have a bundled database from our PC, copy it over!
+    if (!fs.existsSync(persistentPath) && fs.existsSync(localBundledPath)) {
+      console.log('--- MIGRATING LOCAL DATA TO CLOUD ---');
+      try {
+        fs.copyFileSync(localBundledPath, persistentPath);
+        console.log('--- MIGRATION SUCCESSFUL ---');
+      } catch (err) {
+        console.error('--- MIGRATION FAILED ---', err);
+      }
+    }
+  } else {
+    dbPath = localBundledPath;
+  }
 
   const db = await open({
     filename: dbPath,
