@@ -1,38 +1,30 @@
 const { open } = require('sqlite');
 const sqlite3 = require('sqlite3');
 const path = require('path');
+const fs = require('fs');
 
 async function initializeDb() {
-  const isRailway = process.env.RAILWAY_ENVIRONMENT;
-  const persistentPath = '/data/database.sqlite';
-  const localBundledPath = path.join(__dirname, 'database.sqlite');
+  // Use DB_PATH from environment (for Railway Volumes) or default to local file
+  const dbPath = process.env.DB_PATH || path.join(__dirname, 'database.sqlite');
   
-  let dbPath;
-
-  if (isRailway) {
-    dbPath = persistentPath;
-    
-    // --- DATA MIGRATION LOGIC ---
-    const fs = require('fs');
-    // FORCE MIGRATION: Copy bundled database from PC over the cloud one
-    if (fs.existsSync(localBundledPath)) {
-      console.log('--- FORCING DATA SYNC FROM PC TO CLOUD ---');
-      try {
-        fs.copyFileSync(localBundledPath, persistentPath);
-        console.log('--- SYNC SUCCESSFUL ---');
-      } catch (err) {
-        console.error('--- SYNC FAILED ---', err);
-      }
-    }
-  } else {
-    dbPath = localBundledPath;
+  // Ensure the directory exists (required for Railway volumes)
+  const dbDir = path.dirname(dbPath);
+  if (!fs.existsSync(dbDir)) {
+    console.log(`📁 Creating directory: ${dbDir}`);
+    fs.mkdirSync(dbDir, { recursive: true });
   }
+
+  console.log(`📂 Using database at: ${dbPath}`);
 
   const db = await open({
     filename: dbPath,
     driver: sqlite3.Database
   });
 
+  // Enable foreign keys
+  await db.get('PRAGMA foreign_keys = ON');
+
+  // Create tables using the correct schema
   await db.exec(`
     CREATE TABLE IF NOT EXISTS families (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,6 +43,7 @@ async function initializeDb() {
       lastReportDate TEXT,
       reportCount INTEGER DEFAULT 0,
       overallRisk TEXT DEFAULT 'Normal',
+      familyId INTEGER,
       FOREIGN KEY (family_id) REFERENCES families(id)
     );
 
@@ -65,6 +58,8 @@ async function initializeDb() {
       summary TEXT,
       doctorNotes TEXT,
       labValues TEXT DEFAULT '[]',
+      familyId INTEGER,
+      memberId TEXT,
       FOREIGN KEY (family_id) REFERENCES families(id),
       FOREIGN KEY (member_id) REFERENCES members(id)
     );
@@ -80,10 +75,19 @@ async function initializeDb() {
       type TEXT DEFAULT 'Reminder',
       status TEXT DEFAULT 'Active',
       read INTEGER DEFAULT 0,
+      familyId INTEGER,
+      memberId TEXT,
       FOREIGN KEY (family_id) REFERENCES families(id),
       FOREIGN KEY (member_id) REFERENCES members(id)
     );
   `);
+
+  // Migration: Add columns if they are missing from older versions
+  const tables = ['members', 'reports', 'alerts'];
+  for (const table of tables) {
+    try { await db.exec(`ALTER TABLE ${table} ADD COLUMN familyId INTEGER`); } catch (e) {}
+    try { await db.exec(`ALTER TABLE ${table} ADD COLUMN memberId TEXT`); } catch (e) {}
+  }
 
   return db;
 }
