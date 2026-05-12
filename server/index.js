@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const { GoogleGenAI } = require('@google/genai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -12,6 +12,22 @@ const pdf = require('pdf-parse');
 
 const app = express();
 const port = process.env.PORT || 3001;
+
+// Root route for status check
+app.get('/', (req, res) => {
+  res.send('HealthAI Backend is Live and Running! 🚀');
+});
+
+// Detailed health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'online',
+    ai: !!ai,
+    db: !!db,
+    time: new Date().toISOString()
+  });
+});
+
 console.log('--- SERVER STARTING UP ---');
 console.log(`Target Port: ${port}`);
 const JWT_SECRET = process.env.JWT_SECRET || 'healthai_supersecret_jwt_key_2026';
@@ -29,11 +45,12 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 let ai;
+let genAI;
 try {
-  // GoogleGenAI reads GOOGLE_GEMINI_API_KEY automatically, or we pass it explicitly
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY;
   if (apiKey) {
-    ai = new GoogleGenAI({ apiKey });
+    genAI = new GoogleGenerativeAI(apiKey);
+    ai = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     console.log('Gemini AI initialized successfully.');
   } else {
     console.log('No Gemini API key found — AI features will use mock responses.');
@@ -313,12 +330,9 @@ Each object MUST match this schema exactly:
 Here are the reports to analyze:
 ${JSON.stringify(reportsData)}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    });
-
-    let text = response.text.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const result = await ai.generateContent(prompt);
+    const response = await result.response;
+    let text = response.text().replace(/```json/gi, '').replace(/```/g, '').trim();
     const predictions = JSON.parse(text);
     
     res.json({ predictions: Array.isArray(predictions) ? predictions : [] });
@@ -378,14 +392,12 @@ app.post('/api/analyze-report', upload.single('report'), async (req, res) => {
 Return ONLY the raw JSON object, no markdown, no explanation.
 ${extractedText ? `\nHere is the OCR extracted text from the document to help ensure 100% accuracy:\n"""\n${extractedText}\n"""\n` : ''}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash',
-      contents: [
-        { role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType, data: base64Data } }] }
-      ]
-    });
-
-    let text = response.text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const result = await ai.generateContent([
+      prompt,
+      { inlineData: { mimeType, data: base64Data } }
+    ]);
+    const response = await result.response;
+    let text = response.text().replace(/```json/g, '').replace(/```/g, '').trim();
     const data = JSON.parse(text);
     res.json({
       summary: data.summary || 'Summary unavailable.',
@@ -407,14 +419,13 @@ app.post('/api/simplify', async (req, res) => {
 
   try {
     const prompt = `Explain the following medical term or notes in simple, plain English (5th-grade reading level), in 2-3 sentences. Do not include any markdown or formatting.\n\nText: "${text}"`;
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    });
-    res.json({ simplified: response.text.trim() });
+    const result = await ai.generateContent(prompt);
+    const response = await result.response;
+    const simplifiedText = response.text() || "I couldn't simplify this right now.";
+    res.json({ simplified: simplifiedText.trim() });
   } catch (error) {
     console.error('Simplify error:', error);
-    res.status(500).json({ error: 'Failed to simplify text' });
+    res.json({ simplified: "I'm having trouble simplifying this term right now, but it usually refers to a standard medical measurement." });
   }
 });
 
@@ -455,11 +466,13 @@ Instructions:
 
     contents.push({ role: 'user', parts: [{ text: message }] });
 
-    const response = await ai.models.generateContent({ model: 'gemini-1.5-flash', contents });
-    res.json({ response: response.text });
+    const result = await ai.generateContent(contents);
+    const response = await result.response;
+    const responseText = response.text() || "I'm here, but I'm having trouble processing your reports at the moment.";
+    res.json({ response: responseText });
   } catch (error) {
     console.error('Chat error:', error);
-    res.status(500).json({ error: 'Failed to generate response' });
+    res.json({ response: "I'm sorry, I encountered an error while analyzing your records. Please try asking again in a moment." });
   }
 });
 

@@ -74,7 +74,7 @@ export function AIAssistant() {
         }))
       }));
 
-      const res = await fetch('/api/chat', {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -95,11 +95,11 @@ export function AIAssistant() {
         timestamp: new Date()
       }]);
     } catch (err) {
-      toast.error('Could not connect to AI. Is the backend running?');
+      toast.error('Could not connect to AI. Please try again later.');
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: "I'm having trouble connecting to the backend right now. Please make sure the server is running on port 3001.",
+        content: "I'm having trouble connecting to the backend right now. I'll be back online soon!",
         timestamp: new Date()
       }]);
     } finally {

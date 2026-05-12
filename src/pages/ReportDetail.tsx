@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useFamily } from '../lib/FamilyContext';
+import { useFamily, API_BASE } from '../lib/FamilyContext';
 import {
   ArrowLeft,
   Download,
@@ -27,7 +27,7 @@ export function ReportDetail() {
   const handleSimplify = async (term: string) => {
     setSimplifying(term);
     try {
-      const res = await fetch('/api/simplify', {
+      const res = await fetch(`${API_BASE}/api/simplify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: term })

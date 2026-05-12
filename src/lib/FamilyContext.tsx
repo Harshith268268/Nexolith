@@ -2,9 +2,8 @@ import React, { useState, useEffect, createContext, useContext, ReactNode, useCa
 import { FamilyMember, Report, Alert, Prediction } from './mockData';
 import localforage from 'localforage';
 
-// In development: empty string = Vite proxy handles /api → localhost:3001
-// In production (mobile app / Vercel): VITE_API_URL = https://your-app.railway.app
-const API_BASE = import.meta.env.VITE_API_URL || '';
+// The live Railway backend URL
+export const API_BASE = 'https://nexolith-production.up.railway.app';
 
 interface AuthState {
   token: string | null;
