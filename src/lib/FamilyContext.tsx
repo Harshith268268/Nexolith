@@ -2,8 +2,8 @@ import React, { useState, useEffect, createContext, useContext, ReactNode, useCa
 import { FamilyMember, Report, Alert, Prediction } from './mockData';
 import localforage from 'localforage';
 
-// The live Railway backend URL
-export const API_BASE = 'https://nexolith-production.up.railway.app';
+// Dynamic API URL: Uses Cloud when deployed, Localhost when developing
+export const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:3001'; 
 
 interface AuthState {
   token: string | null;

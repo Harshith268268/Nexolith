@@ -3,87 +3,73 @@ const sqlite3 = require('sqlite3');
 const path = require('path');
 
 async function initializeDb() {
-  const isRailway = process.env.RAILWAY_ENVIRONMENT;
-  const persistentPath = '/data/database.sqlite';
-  const localBundledPath = path.join(__dirname, 'database.sqlite');
+  const dbPath = path.join(__dirname, 'database_v2.sqlite');
   
-  let dbPath;
-
-  if (isRailway) {
-    dbPath = persistentPath;
-    
-    // --- DATA MIGRATION LOGIC ---
-    const fs = require('fs');
-    // FORCE MIGRATION: Copy bundled database from PC over the cloud one
-    if (fs.existsSync(localBundledPath)) {
-      console.log('--- FORCING DATA SYNC FROM PC TO CLOUD ---');
-      try {
-        fs.copyFileSync(localBundledPath, persistentPath);
-        console.log('--- SYNC SUCCESSFUL ---');
-      } catch (err) {
-        console.error('--- SYNC FAILED ---', err);
-      }
-    }
-  } else {
-    dbPath = localBundledPath;
-  }
-
   const db = await open({
     filename: dbPath,
     driver: sqlite3.Database
   });
 
+  // Enable foreign keys
+  await db.get('PRAGMA foreign_keys = ON');
+
   await db.exec(`
-    CREATE TABLE IF NOT EXISTS families (
+    CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
+      familyId INTEGER NOT NULL,
       created_at TEXT DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS members (
-      id TEXT PRIMARY KEY,
-      family_id INTEGER NOT NULL,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      familyId INTEGER NOT NULL,
       name TEXT NOT NULL,
       age INTEGER,
       relation TEXT,
       avatarUrl TEXT,
       lastReportDate TEXT,
       reportCount INTEGER DEFAULT 0,
-      overallRisk TEXT DEFAULT 'Normal',
-      FOREIGN KEY (family_id) REFERENCES families(id)
+      overallRisk TEXT DEFAULT 'Normal'
     );
 
     CREATE TABLE IF NOT EXISTS reports (
-      id TEXT PRIMARY KEY,
-      family_id INTEGER NOT NULL,
-      member_id TEXT NOT NULL,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      familyId INTEGER NOT NULL,
+      memberId INTEGER NOT NULL,
       title TEXT,
       date TEXT,
       type TEXT,
       abnormality TEXT DEFAULT 'Normal',
       summary TEXT,
       doctorNotes TEXT,
-      labValues TEXT DEFAULT '[]',
-      FOREIGN KEY (family_id) REFERENCES families(id),
-      FOREIGN KEY (member_id) REFERENCES members(id)
+      labValues TEXT DEFAULT '[]'
     );
 
     CREATE TABLE IF NOT EXISTS alerts (
-      id TEXT PRIMARY KEY,
-      family_id INTEGER NOT NULL,
-      member_id TEXT NOT NULL,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      familyId INTEGER NOT NULL,
+      memberId INTEGER NOT NULL,
       title TEXT NOT NULL,
       description TEXT,
       date TEXT,
       severity TEXT DEFAULT 'Normal',
       type TEXT DEFAULT 'Reminder',
       status TEXT DEFAULT 'Active',
-      read INTEGER DEFAULT 0,
-      FOREIGN KEY (family_id) REFERENCES families(id),
-      FOREIGN KEY (member_id) REFERENCES members(id)
+      read INTEGER DEFAULT 0
     );
   `);
+
+  // Migration: Add columns if they are missing from older versions
+  const tables = ['members', 'reports', 'alerts'];
+  for (const table of tables) {
+    try {
+      await db.exec(`ALTER TABLE ${table} ADD COLUMN familyId INTEGER`);
+    } catch (e) {
+      // Column already exists
+    }
+  }
 
   return db;
 }
