@@ -28,7 +28,7 @@ server/.env
 .env.local
 
 # SQLite database (managed on Railway persistent volume)
-# server/database.sqlite
+server/database.sqlite
 
 # Capacitor native build outputs (generated, not source)
 android/.gradle
