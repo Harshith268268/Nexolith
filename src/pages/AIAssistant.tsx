@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useFamily } from '../lib/FamilyContext';
+import { useFamily, API_BASE } from '../lib/FamilyContext';
 import { Send, Bot, User, Sparkles, Loader2, FileText, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -74,7 +74,7 @@ export function AIAssistant() {
         }))
       }));
 
-      const res = await fetch('/api/chat', {
+          const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
