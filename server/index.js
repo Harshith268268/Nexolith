@@ -44,8 +44,26 @@ async function seedDatabase() {
         );
       }
       console.log('✅ All members seeded successfully!');
+    }
+
+    const existingReports = await db.all('SELECT * FROM reports WHERE family_id = ?', [family_id]);
+    if (existingReports.length === 0) {
+      console.log('📄 Seeding initial reports...');
+      const reports = [
+        { id: 'r1', member_id: 'm1', title: 'Cardiology Report', date: '2024-05-10', type: 'Cardiology', abnormality: 'Borderline', summary: 'Mild heart rate elevation noted.' },
+        { id: 'r2', member_id: 'm1', title: 'General Checkup', date: '2024-04-15', type: 'General', abnormality: 'Normal', summary: 'All vitals within normal range.' },
+        { id: 'r3', member_id: 'm1', title: 'Blood Test', date: '2024-03-20', type: 'Blood', abnormality: 'Normal', summary: 'Healthy cholesterol levels.' }
+      ];
+
+      for (const r of reports) {
+        await db.run(
+          'INSERT INTO reports (id, family_id, familyId, member_id, memberId, title, date, type, abnormality, summary) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [r.id, family_id, family_id, r.member_id, r.member_id, r.title, r.date, r.type, r.abnormality, r.summary]
+        );
+      }
+      console.log('✅ Reports seeded successfully!');
     } else {
-      console.log('✨ Database already has data. Skipping seed.');
+      console.log('✨ Database already has reports. Skipping seed.');
     }
   } catch (err) {
     console.error('❌ Seeding Error:', err);
