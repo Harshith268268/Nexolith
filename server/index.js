@@ -27,7 +27,7 @@ async function seedDatabase() {
       await db.run('DELETE FROM members');
       await db.run('DELETE FROM families');
 
-      // Import Families (Handle duplicates automatically)
+      // Import Families (Handle duplicates)
       for (const f of data.families) {
         await db.run(
           'INSERT OR REPLACE INTO families (id, username, password) VALUES (?, ?, ?)',
@@ -35,24 +35,23 @@ async function seedDatabase() {
         );
       }
 
-      // Import Members
+      // Import Members (Handle duplicates)
       for (const m of data.members) {
         await db.run(
-          'INSERT INTO members (id, family_id, familyId, name, age, relation, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          'INSERT OR REPLACE INTO members (id, family_id, familyId, name, age, relation, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [m.id, m.family_id, m.family_id, m.name, m.age, m.relation, m.avatarUrl]
         );
       }
 
-      // Import Reports
+      // Import Reports (Handle duplicates)
       for (const r of data.reports) {
         await db.run(
-          'INSERT INTO reports (id, family_id, familyId, member_id, memberId, title, date, type, abnormality, summary, doctorNotes, labValues) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT OR REPLACE INTO reports (id, family_id, familyId, member_id, memberId, title, date, type, abnormality, summary, doctorNotes, labValues) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [r.id, r.family_id, r.family_id, r.member_id, r.member_id, r.title, r.date, r.type, r.abnormality, r.summary, r.doctorNotes || '', r.labValues || '[]']
         );
       }
       
       console.log('✅ TOTAL SYNC SUCCESSFUL! Your Cloud is now an exact twin of your Localhost.');
-      // Move the file so we don't sync on every restart
       fs.renameSync(importPath, importPath + '.done');
     }
   } catch (err) {
@@ -82,17 +81,13 @@ app.post('/api/login', async (req, res) => {
   try {
     const family = await db.get('SELECT * FROM families WHERE username = ?', [username]);
     if (!family) return res.status(401).json({ error: 'Invalid credentials' });
-    
-    // Check password (either bcrypt or plain if it's a new seed)
     const isValid = await bcrypt.compare(password, family.password);
     if (!isValid && password !== '1234') return res.status(401).json({ error: 'Invalid credentials' });
-
     const token = jwt.sign({ id: family.id, username: family.username }, process.env.JWT_SECRET || 'secret');
     res.json({ token, family: { id: family.id, username: family.username } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Data Routes
 app.get('/api/data', async (req, res) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token' });
@@ -118,7 +113,6 @@ app.post('/api/reports', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// AI Route
 async function analyzeReportHandler(req, res) {
   if (!req.file) return res.status(400).json({ error: 'No file' });
   try {
