@@ -27,10 +27,10 @@ async function seedDatabase() {
       await db.run('DELETE FROM members');
       await db.run('DELETE FROM families');
 
-      // Import Families
+      // Import Families (Handle duplicates automatically)
       for (const f of data.families) {
         await db.run(
-          'INSERT INTO families (id, username, password) VALUES (?, ?, ?)',
+          'INSERT OR REPLACE INTO families (id, username, password) VALUES (?, ?, ?)',
           [f.id, f.username, f.password]
         );
       }
