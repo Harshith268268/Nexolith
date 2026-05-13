@@ -94,9 +94,10 @@ app.get('/api/data', async (req, res) => {
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    const members = await db.all('SELECT * FROM members WHERE family_id = ?', [decoded.id]);
-    const reports = await db.all('SELECT * FROM reports WHERE family_id = ?', [decoded.id]);
-    const alerts = await db.all('SELECT * FROM alerts WHERE family_id = ?', [decoded.id]);
+    const fId = Number(decoded.id); // Ensure it is a Number for the database
+    const members = await db.all('SELECT * FROM members WHERE family_id = ?', [fId]);
+    const reports = await db.all('SELECT * FROM reports WHERE family_id = ?', [fId]);
+    const alerts = await db.all('SELECT * FROM alerts WHERE family_id = ?', [fId]);
     res.json({ members, reports, alerts });
   } catch (e) { res.status(401).json({ error: 'Invalid token' }); }
 });
