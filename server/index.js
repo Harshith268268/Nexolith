@@ -130,4 +130,16 @@ async function analyzeReportHandler(req, res) {
 app.post('/api/analyze-report', upload.single('report'), analyzeReportHandler);
 app.post('/api/analyze_report', upload.single('report'), analyzeReportHandler);
 
+// Debug Route to see DB status
+app.get('/api/debug/db', async (req, res) => {
+  try {
+    const counts = {
+      families: (await db.get('SELECT COUNT(*) as count FROM families')).count,
+      members: (await db.get('SELECT COUNT(*) as count FROM members')).count,
+      reports: (await db.get('SELECT COUNT(*) as count FROM reports')).count
+    };
+    res.json({ status: 'Online', counts });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.listen(port, '0.0.0.0', () => console.log(`Server on ${port}`));
