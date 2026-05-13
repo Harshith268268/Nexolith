@@ -117,14 +117,37 @@ export function FamilyProvider({ children }: { children: ReactNode }) {
     try {
       const res = await apiFetch('/api/data');
       if (res.ok) {
-        const data = await res.json();
+        const rawData = await res.json();
+        
+        // Normalize snake_case from DB to camelCase for React
+        const data = {
+          members: (rawData.members || []).map((m: any) => ({
+            ...m,
+            familyId: m.familyId || m.family_id,
+            reportCount: m.reportCount || m.report_count || 0,
+            overallRisk: m.overallRisk || m.overall_risk || 'Normal',
+            lastReportDate: m.lastReportDate || m.last_report_date
+          })),
+          reports: (rawData.reports || []).map((r: any) => ({
+            ...r,
+            familyId: r.familyId || r.family_id,
+            memberId: r.memberId || r.member_id,
+            labValues: typeof r.labValues === 'string' ? JSON.parse(r.labValues) : r.labValues
+          })),
+          alerts: (rawData.alerts || []).map((a: any) => ({
+            ...a,
+            familyId: a.familyId || a.family_id,
+            memberId: a.memberId || a.member_id
+          }))
+        };
+
         // Update offline cache
         await localforage.setItem(`healthai_data_${auth.familyId}`, data);
         
-        const fetchedMembers: FamilyMember[] = data.members || [];
+        const fetchedMembers: FamilyMember[] = data.members;
         setMembers(fetchedMembers);
-        setReports(data.reports || []);
-        setAlerts(data.alerts || []);
+        setReports(data.reports);
+        setAlerts(data.alerts);
         setActiveMember(prev => {
           if (prev) {
             const updated = fetchedMembers.find(m => m.id === prev.id);
