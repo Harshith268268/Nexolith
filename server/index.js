@@ -35,7 +35,7 @@ async function seedDatabase() {
         );
       }
 
-      // IMPORT ALL MEMBERS TO FAMILY ID 3 (The main user)
+      // IMPORT ALL MEMBERS TO FAMILY ID 3
       const targetFamilyId = 3; 
       for (const m of data.members) {
         await db.run(
@@ -52,9 +52,8 @@ async function seedDatabase() {
         );
       }
       
-      console.log('✅ TOTAL SYNC SUCCESSFUL! Everything is now in PostgreSQL.');
-      // Keep file for one more cycle to ensure success
-      // fs.renameSync(importPath, importPath + '.done');
+      console.log('✅ TOTAL SYNC SUCCESSFUL! PostgreSQL is now the Master.');
+      fs.renameSync(importPath, importPath + '.done');
     }
   } catch (err) {
     console.error('❌ Sync Error:', err);
@@ -101,6 +100,24 @@ app.get('/api/data', async (req, res) => {
     const alerts = await db.all('SELECT * FROM alerts WHERE family_id = ?', [fId]);
     res.json({ members, reports, alerts });
   } catch (e) { res.status(401).json({ error: 'Invalid token' }); }
+});
+
+// AI Chat Route (FIXING THE 404)
+app.post('/api/chat', async (req, res) => {
+  const { message, history, memberId } = req.body;
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    const fId = Number(decoded.id);
+
+    // Fetch reports for context
+    const reports = await db.all('SELECT * FROM reports WHERE family_id = ?', [fId]);
+    const context = reports.map(r => `${r.title} (${r.date}): ${r.summary}`).join('\n');
+
+    const prompt = `You are a medical AI assistant. Context of patient reports:\n${context}\n\nUser Question: ${message}`;
+    const result = await model.generateContent(prompt);
+    res.json({ content: result.response.text() });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/reports', async (req, res) => {
