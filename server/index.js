@@ -17,20 +17,20 @@ async function seedDatabase() {
   try {
     const importPath = path.join(__dirname, 'cloud_import.json');
     if (fs.existsSync(importPath)) {
-      console.log('🔄 FOUND EXACT LOCAL DATA! Starting Full Cloud Sync...');
+      console.log('🔄 FOUND EXACT LOCAL DATA! Starting Full Cloud Sync to PostgreSQL...');
       const rawData = fs.readFileSync(importPath);
       const data = JSON.parse(rawData);
 
       // Total Wipe for Clean Import
-      await db.run('DELETE FROM alerts');
-      await db.run('DELETE FROM reports');
-      await db.run('DELETE FROM members');
-      await db.run('DELETE FROM families');
+      await db.run('DELETE FROM alerts', []);
+      await db.run('DELETE FROM reports', []);
+      await db.run('DELETE FROM members', []);
+      await db.run('DELETE FROM families', []);
 
       // Import Families
       for (const f of data.families) {
         await db.run(
-          'INSERT OR REPLACE INTO families (id, username, password) VALUES (?, ?, ?)',
+          'INSERT INTO families (id, username, password) VALUES (?, ?, ?)',
           [f.id, f.username, f.password]
         );
       }
@@ -39,7 +39,7 @@ async function seedDatabase() {
       const targetFamilyId = 3; 
       for (const m of data.members) {
         await db.run(
-          'INSERT OR REPLACE INTO members (id, family_id, familyId, name, age, relation, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO members (id, family_id, familyId, name, age, relation, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [m.id, targetFamilyId, targetFamilyId, m.name, m.age, m.relation, m.avatarUrl]
         );
       }
@@ -47,13 +47,14 @@ async function seedDatabase() {
       // IMPORT ALL REPORTS TO FAMILY ID 3
       for (const r of data.reports) {
         await db.run(
-          'INSERT OR REPLACE INTO reports (id, family_id, familyId, member_id, memberId, title, date, type, abnormality, summary, doctorNotes, labValues) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [r.id, targetFamilyId, targetFamilyId, r.member_id, r.memberId || r.member_id, r.title, r.date, r.type, r.abnormality, r.summary, r.doctorNotes || '', r.labValues || '[]']
+          'INSERT INTO reports (id, family_id, familyId, member_id, memberId, title, date, type, abnormality, summary, doctorNotes, labValues) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [r.id, targetFamilyId, targetFamilyId, r.member_id, r.memberId || r.member_id, r.title, r.date, r.type, r.abnormality, r.summary, r.doctorNotes || '', typeof r.labValues === 'string' ? r.labValues : JSON.stringify(r.labValues || [])]
         );
       }
       
-      console.log('✅ TOTAL SYNC SUCCESSFUL! Everything is now tied to Family ID 3.');
-      fs.renameSync(importPath, importPath + '.done');
+      console.log('✅ TOTAL SYNC SUCCESSFUL! Everything is now in PostgreSQL.');
+      // Keep file for one more cycle to ensure success
+      // fs.renameSync(importPath, importPath + '.done');
     }
   } catch (err) {
     console.error('❌ Sync Error:', err);
@@ -94,7 +95,7 @@ app.get('/api/data', async (req, res) => {
   if (!token) return res.status(401).json({ error: 'No token' });
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    const fId = Number(decoded.id); // Ensure it is a Number for the database
+    const fId = Number(decoded.id);
     const members = await db.all('SELECT * FROM members WHERE family_id = ?', [fId]);
     const reports = await db.all('SELECT * FROM reports WHERE family_id = ?', [fId]);
     const alerts = await db.all('SELECT * FROM alerts WHERE family_id = ?', [fId]);
@@ -131,13 +132,14 @@ app.post('/api/analyze_report', upload.single('report'), analyzeReportHandler);
 
 app.get('/api/debug/db', async (req, res) => {
   try {
-    const families = await db.all('SELECT id, username FROM families');
+    const families = await db.all('SELECT id, username FROM families', []);
+    const members = await db.all('SELECT id, name FROM members', []);
     const counts = {
       families: families.length,
-      members: (await db.get('SELECT COUNT(*) as count FROM members')).count,
-      reports: (await db.get('SELECT COUNT(*) as count FROM reports')).count
+      members: members.length,
+      reports: (await db.get('SELECT COUNT(*) as count FROM reports', [])).count
     };
-    res.json({ status: 'Online', families, counts });
+    res.json({ status: 'Online', families, members, counts, dbType: db.type });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
