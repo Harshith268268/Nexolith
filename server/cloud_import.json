@@ -1,10 +1,8 @@
 {
   "families": [
-    {"id": 1, "username": "family1", "password": "$2a$10$Uo2gqR2A3D2J9R6.z9X9.e6G8G8G8G8G8G8G8G8G8G8G8G8G8G8G"},
-    {"id": 3, "username": "family1", "password": "$2a$10$Uo2gqR2A3D2J9R6.z9X9.e6G8G8G8G8G8G8G8G8G8G8G8G8G8G8G"}
+    {"id": 3, "username": "Family1", "password": "$2b$10$LC2H5u1sdQxmUdL1.WPkruBfBaMwVakzCQ/ze8j4MiBA5E/pvqCxe"}
   ],
   "members": [
-    {"id": "c274e703-f293-4fe0-94dc-8cd69a51b7a0", "family_id": 1, "name": "Chiranjeevi", "age": 68, "relation": "Father", "avatarUrl": "https://i.pravatar.cc/150?u=m1"},
     {"id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "family_id": 3, "name": "Chiranjeevi", "age": 68, "relation": "Father", "avatarUrl": "https://i.pravatar.cc/150?u=m1"},
     {"id": "75b67f24-e3fc-4ebd-a5f1-91ed08345657", "family_id": 3, "name": "Ramcharan", "age": 39, "relation": "Son", "avatarUrl": "https://i.pravatar.cc/150?u=m2"},
     {"id": "f9d5cc08-d81d-492d-ba87-d64c768fff10", "family_id": 3, "name": "Upasana", "age": 35, "relation": "Daughter-in-law", "avatarUrl": "https://i.pravatar.cc/150?u=m3"}

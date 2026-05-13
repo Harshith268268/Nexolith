@@ -79,10 +79,13 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    const family = await db.get('SELECT * FROM families WHERE username = ?', [username]);
+    // Case-insensitive lookup
+    const family = await db.get('SELECT * FROM families WHERE LOWER(username) = LOWER(?)', [username]);
     if (!family) return res.status(401).json({ error: 'Invalid credentials' });
+    
     const isValid = await bcrypt.compare(password, family.password);
-    if (!isValid && password !== '1234') return res.status(401).json({ error: 'Invalid credentials' });
+    if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
+
     const token = jwt.sign({ id: family.id, username: family.username }, process.env.JWT_SECRET || 'secret');
     res.json({ token, family: { id: family.id, username: family.username } });
   } catch (e) { res.status(500).json({ error: e.message }); }
