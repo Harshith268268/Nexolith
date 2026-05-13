@@ -1,16 +1,35 @@
 {
   "families": [
-    {"id": 3, "username": "Family1", "password": "$2b$10$LC2H5u1sdQxmUdL1.WPkruBfBaMwVakzCQ/ze8j4MiBA5E/pvqCxe"}
+    {"id": 1, "username": "Jones", "password": "$2b$10$0fK9O3CYfEZAKsj2GkVnKe8pRbharyE3BYs5WLmj6X6NPKsMUqN8y"},
+    {"id": 2, "username": "testuser_123", "password": "$2b$10$/NjQ04ZrrIHdyLhDbZjZW.jPQLjs.f5LnUGzAHM4dUKkRosR9Qr3e"},
+    {"id": 3, "username": "Family1", "password": "$2b$10$LC2H5u1sdQxmUdL1.WPkruBfBaMwVakzCQ/ze8j4MiBA5E/pvqCxe"},
+    {"id": 4, "username": "testuser", "password": "$2b$10$kCd15ViwkG8Ol.ZR3dkWt.1tJh.jVD5FmwEl6UU608bQdNvbPDmae"}
   ],
   "members": [
-    {"id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "family_id": 3, "familyId": 3, "name": "Chiranjeevi", "age": 68, "relation": "Father", "avatarUrl": "https://i.pravatar.cc/150?u=m1"},
-    {"id": "75b67f24-e3fc-4ebd-a5f1-91ed08345657", "family_id": 3, "familyId": 3, "name": "Ramcharan", "age": 39, "relation": "Son", "avatarUrl": "https://i.pravatar.cc/150?u=m2"},
-    {"id": "f9d5cc08-d81d-492d-ba87-d64c768fff10", "family_id": 3, "familyId": 3, "name": "Upasana", "age": 35, "relation": "Daughter-in-law", "avatarUrl": "https://i.pravatar.cc/150?u=m3"}
+    {"id": "c274e703-f293-4fe0-94dc-8cd69a51b7a0", "family_id": 1, "name": "Chiranjeevi", "age": 68, "relation": "Father", "avatarUrl": "https://i.pravatar.cc/150?u=m1"},
+    {"id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "family_id": 3, "name": "Chiranjeevi", "age": 68, "relation": "Father", "avatarUrl": "https://i.pravatar.cc/150?u=m1"},
+    {"id": "75b67f24-e3fc-4ebd-a5f1-91ed08345657", "family_id": 3, "name": "Ramcharan", "age": 39, "relation": "Son", "avatarUrl": "https://i.pravatar.cc/150?u=m2"},
+    {"id": "f9d5cc08-d81d-492d-ba87-d64c768fff10", "family_id": 3, "name": "Upasana", "age": 35, "relation": "Daughter-in-law", "avatarUrl": "https://i.pravatar.cc/150?u=m3"},
+    {"id": "c6a28292-628d-492d-ba87-d64c768fff10", "family_id": 3, "name": "Surekha", "age": 62, "relation": "Mother", "avatarUrl": "https://i.pravatar.cc/150?u=m4"},
+    {"id": "d1a28292-628d-492d-ba87-d64c768fff10", "family_id": 3, "name": "Kajal", "age": 32, "relation": "Daughter", "avatarUrl": "https://i.pravatar.cc/150?u=m5"},
+    {"id": "e2a28292-628d-492d-ba87-d64c768fff10", "family_id": 3, "name": "Self", "age": 24, "relation": "Self", "avatarUrl": "https://i.pravatar.cc/150?u=m6"}
   ],
   "reports": [
-    {"id": "89a695e1-512c-473d-815d-f19b26b48879", "family_id": 3, "familyId": 3, "member_id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "memberId": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "title": "Cardiology Report", "date": "2024-05-10", "type": "Cardiology", "abnormality": "Borderline", "summary": "Mild heart rate elevation noted."},
-    {"id": "739a19d3-d922-44df-91ca-520e408ec2be", "family_id": 3, "familyId": 3, "member_id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "memberId": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "title": "General Checkup", "date": "2024-04-15", "type": "General", "abnormality": "Normal", "summary": "All vitals within normal range."},
-    {"id": "a8b2737a-493f-424d-be66-e8d19760775d", "family_id": 3, "familyId": 3, "member_id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "memberId": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "title": "Blood Test", "date": "2024-03-20", "type": "Blood", "abnormality": "Normal", "summary": "Healthy cholesterol levels."}
+    {"id": "89a695e1-512c-473d-815d-f19b26b48879", "family_id": 3, "member_id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "title": "Cardiology Report", "date": "2024-05-10", "type": "Cardiology", "abnormality": "Borderline", "summary": "Mild heart rate elevation noted."},
+    {"id": "739a19d3-d922-44df-91ca-520e408ec2be", "family_id": 3, "member_id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "title": "General Checkup", "date": "2024-04-15", "type": "General", "abnormality": "Normal", "summary": "All vitals within normal range."},
+    {"id": "a8b2737a-493f-424d-be66-e8d19760775d", "family_id": 3, "member_id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "title": "Blood Test", "date": "2024-03-20", "type": "Blood", "abnormality": "Normal", "summary": "Healthy cholesterol levels."},
+    {"id": "r4", "family_id": 3, "member_id": "75b67f24-e3fc-4ebd-a5f1-91ed08345657", "title": "Fitness Assessment", "date": "2024-05-12", "type": "Fitness", "abnormality": "Normal", "summary": "High performance noted."},
+    {"id": "r5", "family_id": 3, "member_id": "f9d5cc08-d81d-492d-ba87-d64c768fff10", "title": "Wellness Check", "date": "2024-05-12", "type": "Wellness", "abnormality": "Normal", "summary": "Excellent health indicators."},
+    {"id": "r6", "family_id": 3, "member_id": "75b67f24-e3fc-4ebd-a5f1-91ed08345657", "title": "Ramcharan Test", "date": "2024-05-12", "type": "Blood", "abnormality": "Normal", "summary": "Test summary here."},
+    {"id": "r7", "family_id": 3, "member_id": "f9d5cc08-d81d-492d-ba87-d64c768fff10", "title": "Upasana Report", "date": "2024-05-12", "type": "Lab", "abnormality": "Normal", "summary": "Lab summary here."},
+    {"id": "r8", "family_id": 3, "member_id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "title": "Chiranjeevi Deep Check", "date": "2024-05-12", "type": "Advanced", "abnormality": "Normal", "summary": "Deep check summary."},
+    {"id": "r9", "family_id": 3, "member_id": "f9d5cc08-d81d-492d-ba87-d64c768fff10", "title": "Deepthi test report", "date": "2026-05-12", "type": "Health Lab Report", "abnormality": "Borderline", "summary": "Test results summary."}
   ],
-  "alerts": []
+  "alerts": [
+    {"id": "b491af0e-2ad3-4d4f-b6f3-0278e68839ec", "family_id": 1, "member_id": "c274e703-f293-4fe0-94dc-8cd69a51b7a0", "title": "Appointment: ent with sharma", "description": "Location: tirupathi", "date": "2026-05-15", "severity": "Borderline", "type": "Appointment", "status": "Upcoming"},
+    {"id": "7e0dd81c-642d-4d07-9137-ce872d8a0776", "family_id": 1, "member_id": "c274e703-f293-4fe0-94dc-8cd69a51b7a0", "title": "ent", "description": "", "date": "2026-05-15", "severity": "Normal", "type": "Reminder", "status": "Upcoming"},
+    {"id": "8ff1da71-a88b-4323-8c0c-1715076b70a8", "family_id": 3, "member_id": "d78eb5fb-b933-48b2-91d0-e4dc5da97833", "title": "Appointment: Diabetics with Dr Sharma", "description": "Bring previous reports", "date": "2026-05-20", "severity": "Normal", "type": "Appointment", "status": "History"},
+    {"id": "49ed29e3-29bd-4698-bf26-6da0009d7eb9", "family_id": 3, "member_id": "75b67f24-e3fc-4ebd-a5f1-91ed08345657", "title": "xdcssdfsvdv", "description": "", "date": "2026-05-22", "severity": "Normal", "type": "Reminder", "status": "Active"},
+    {"id": "b87921e9-5177-40e9-b01b-b719d5ba4722", "family_id": 3, "member_id": "75b67f24-e3fc-4ebd-a5f1-91ed08345657", "title": "Appointment: sdfz with sdfsa", "description": "asdfv", "date": "2026-05-21", "severity": "Normal", "type": "Appointment", "status": "Active"}
+  ]
 }
