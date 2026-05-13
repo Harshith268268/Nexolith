@@ -39,7 +39,7 @@ async function seedDatabase() {
       for (const m of data.members) {
         await db.run(
           'INSERT OR REPLACE INTO members (id, family_id, familyId, name, age, relation, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [m.id, m.family_id, m.family_id, m.name, m.age, m.relation, m.avatarUrl]
+          [m.id, m.family_id, m.familyId || m.family_id, m.name, m.age, m.relation, m.avatarUrl]
         );
       }
 
@@ -47,12 +47,12 @@ async function seedDatabase() {
       for (const r of data.reports) {
         await db.run(
           'INSERT OR REPLACE INTO reports (id, family_id, familyId, member_id, memberId, title, date, type, abnormality, summary, doctorNotes, labValues) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [r.id, r.family_id, r.family_id, r.member_id, r.member_id, r.title, r.date, r.type, r.abnormality, r.summary, r.doctorNotes || '', r.labValues || '[]']
+          [r.id, r.family_id, r.familyId || r.family_id, r.member_id, r.memberId || r.member_id, r.title, r.date, r.type, r.abnormality, r.summary, r.doctorNotes || '', r.labValues || '[]']
         );
       }
       
-      console.log('✅ TOTAL SYNC SUCCESSFUL! Your Cloud is now an exact twin of your Localhost.');
-      fs.renameSync(importPath, importPath + '.done');
+      console.log('✅ TOTAL SYNC SUCCESSFUL! Cloud mirrors Localhost ID 3.');
+      // fs.renameSync(importPath, importPath + '.done'); // Keep it active for one more cycle
     }
   } catch (err) {
     console.error('❌ Sync Error:', err);
