@@ -27,7 +27,7 @@ async function seedDatabase() {
       await db.run('DELETE FROM members');
       await db.run('DELETE FROM families');
 
-      // Import Families (Handle duplicates)
+      // Import Families
       for (const f of data.families) {
         await db.run(
           'INSERT OR REPLACE INTO families (id, username, password) VALUES (?, ?, ?)',
@@ -35,24 +35,25 @@ async function seedDatabase() {
         );
       }
 
-      // Import Members (Handle duplicates)
+      // IMPORT ALL MEMBERS TO FAMILY ID 3 (The main user)
+      const targetFamilyId = 3; 
       for (const m of data.members) {
         await db.run(
           'INSERT OR REPLACE INTO members (id, family_id, familyId, name, age, relation, avatarUrl) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [m.id, m.family_id, m.familyId || m.family_id, m.name, m.age, m.relation, m.avatarUrl]
+          [m.id, targetFamilyId, targetFamilyId, m.name, m.age, m.relation, m.avatarUrl]
         );
       }
 
-      // Import Reports (Handle duplicates)
+      // IMPORT ALL REPORTS TO FAMILY ID 3
       for (const r of data.reports) {
         await db.run(
           'INSERT OR REPLACE INTO reports (id, family_id, familyId, member_id, memberId, title, date, type, abnormality, summary, doctorNotes, labValues) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [r.id, r.family_id, r.familyId || r.family_id, r.member_id, r.memberId || r.member_id, r.title, r.date, r.type, r.abnormality, r.summary, r.doctorNotes || '', r.labValues || '[]']
+          [r.id, targetFamilyId, targetFamilyId, r.member_id, r.memberId || r.member_id, r.title, r.date, r.type, r.abnormality, r.summary, r.doctorNotes || '', r.labValues || '[]']
         );
       }
       
-      console.log('✅ TOTAL SYNC SUCCESSFUL! Cloud mirrors Localhost ID 3.');
-      // fs.renameSync(importPath, importPath + '.done'); // Keep it active for one more cycle
+      console.log('✅ TOTAL SYNC SUCCESSFUL! Everything is now tied to Family ID 3.');
+      fs.renameSync(importPath, importPath + '.done');
     }
   } catch (err) {
     console.error('❌ Sync Error:', err);
@@ -79,13 +80,10 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    // Case-insensitive lookup
     const family = await db.get('SELECT * FROM families WHERE LOWER(username) = LOWER(?)', [username]);
     if (!family) return res.status(401).json({ error: 'Invalid credentials' });
-    
     const isValid = await bcrypt.compare(password, family.password);
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' });
-
     const token = jwt.sign({ id: family.id, username: family.username }, process.env.JWT_SECRET || 'secret');
     res.json({ token, family: { id: family.id, username: family.username } });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -130,7 +128,6 @@ async function analyzeReportHandler(req, res) {
 app.post('/api/analyze-report', upload.single('report'), analyzeReportHandler);
 app.post('/api/analyze_report', upload.single('report'), analyzeReportHandler);
 
-// Debug Route to see DB status
 app.get('/api/debug/db', async (req, res) => {
   try {
     const families = await db.all('SELECT id, username FROM families');
